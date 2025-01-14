@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "jp.shirataki707.camera"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "jp.shirataki707.camera"
