@@ -4,22 +4,27 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.camera.compose.CameraXViewfinder
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Button
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
@@ -40,13 +45,19 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun CameraPreviewScreen(modifier: Modifier = Modifier) {
+fun CameraPreviewScreen(
+    viewModel: MainActivityViewModel = viewModel(),
+    modifier: Modifier = Modifier,
+) {
     val cameraPermissionState = rememberPermissionState(android.Manifest.permission.CAMERA)
     if (cameraPermissionState.status.isGranted) {
-        CameraPreviewContent()
+        CameraPreviewContent(viewModel)
     } else {
         Column(
-            modifier = modifier.fillMaxSize().wrapContentSize().widthIn(max = 480.dp),
+            modifier = modifier
+                .fillMaxSize()
+                .wrapContentSize()
+                .widthIn(max = 480.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val textToShow = if (cameraPermissionState.status.shouldShowRationale) {
@@ -72,6 +83,21 @@ fun CameraPreviewScreen(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun CameraPreviewContent() {
+fun CameraPreviewContent(
+    viewModel: MainActivityViewModel,
+    modifier: Modifier = Modifier,
+    lifecycleOwner: LifecycleOwner = LocalLifecycleOwner.current
+) {
+    val surfaceRequest by viewModel.surfaceRequest.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    LaunchedEffect(lifecycleOwner) {
+        viewModel.bindToCamera(context.applicationContext, lifecycleOwner)
+    }
 
+    surfaceRequest?.let { request ->
+        CameraXViewfinder(
+            surfaceRequest = request,
+            modifier = modifier
+        )
+    }
 }
